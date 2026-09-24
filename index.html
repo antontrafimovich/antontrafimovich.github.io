@@ -72,32 +72,53 @@
     </style>
   </head>
   <body>
-    <main id="board" class="board is-blinking" role="button" tabindex="0" aria-label="Ticket 001. Activate to stop blinking">
+    <main id="board" class="board" role="button" tabindex="0" aria-label="Ticket 001. Activate to start blinking">
       <span class="number" aria-hidden="true">001</span>
     </main>
 
     <script>
       const board = document.getElementById("board");
-      const stopsAt = Date.now() + 15_000;
-      const timer = window.setTimeout(stopBlinking, 15_000);
+      let stopsAt;
+      let timer;
+      let blinkCycle = 0;
+
+      function startBlinking() {
+        if (board.classList.contains("is-blinking")) return;
+        board.classList.add("is-blinking");
+        board.setAttribute("aria-label", "Ticket 001. Activate to stop blinking");
+        stopsAt = Date.now() + 15_000;
+        const cycle = ++blinkCycle;
+        timer = window.setTimeout(() => {
+          if (blinkCycle === cycle) stopBlinking();
+        }, 15_000);
+      }
 
       function stopBlinking() {
         if (!board.classList.contains("is-blinking")) return;
         board.classList.remove("is-blinking");
-        board.setAttribute("aria-label", "Ticket 001");
+        board.setAttribute("aria-label", "Ticket 001. Activate to start blinking");
+        blinkCycle++;
         window.clearTimeout(timer);
+        timer = undefined;
+        stopsAt = undefined;
       }
 
-      board.addEventListener("pointerdown", stopBlinking);
+      function toggleBlinking() {
+        if (board.classList.contains("is-blinking")) stopBlinking();
+        else startBlinking();
+      }
+
+      startBlinking();
+      board.addEventListener("pointerdown", toggleBlinking);
       board.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          stopBlinking();
+          toggleBlinking();
         }
       });
 
       document.addEventListener("visibilitychange", () => {
-        if (!document.hidden && Date.now() >= stopsAt) stopBlinking();
+        if (!document.hidden && stopsAt !== undefined && Date.now() >= stopsAt) stopBlinking();
       });
     </script>
   </body>
